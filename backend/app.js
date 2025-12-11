@@ -14,6 +14,7 @@ const router = require("@routes/index.route");
 const session = require("express-session");
 const passport = require("@configs/passport.config");
 const sessionStorage = require("@configs/DB/session.config");
+const cookieParser = require("cookie-parser");
 
 const masterRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -26,6 +27,7 @@ app.use(checkDBConnection);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(cookieParser());
 app.use(helmet());
 app.use(helmet.hsts({ maxAge: 31536000, includeSubDomains: true }));
 
