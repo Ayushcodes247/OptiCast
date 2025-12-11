@@ -11,6 +11,9 @@ const checkDBConnection = require("@middlewares/DB/db.middleware");
 const helmet = require("helmet");
 const { rateLimit } = require("express-rate-limit");
 const router = require("@routes/index.route");
+const session = require("express-session");
+const passport = require("@configs/passport.config");
+const sessionStorage = require("@configs/DB/session.config");
 
 const masterRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -26,11 +29,29 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(helmet.hsts({ maxAge: 31536000, includeSubDomains: true }));
 
+app.use(
+  session({
+    saveUninitialized: false,
+    resave: false,
+    secret: process.env.SESSION_SECRET || "default_secret",
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "strict",
+    },
+    store: sessionStorage,
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 if (process.env.NODE_ENV === "production") {
   app.set("trust proxy", 1);
 }
 
-app.use("/api/v1/", masterRateLimiter , checkDBConnection, router);
+app.use("/api/v1/", masterRateLimiter, checkDBConnection, router);
 
 app.use((error, req, res, next) => {
   console.error("[App.js] Error stack:", error.stack);
