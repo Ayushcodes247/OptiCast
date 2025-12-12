@@ -19,7 +19,7 @@ const google = (req, res) => {
 
     const expiresIn = 7 * 24 * 60 * 60;
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       message: "Registeration/Login successful through Google.",
       user: user,
