@@ -1,7 +1,10 @@
 const { validationResult } = require("express-validator");
 const { userModel, validateUser } = require("@models/user.model");
 const { pidGenerator } = require("@utils/essentials.util");
-
+const {
+  blackListTokenModel,
+  validateToken,
+} = require("@models/blackListToken.model");
 const TOKEN_NAME = "auth_token";
 
 module.exports.register = async (req, res) => {
@@ -128,6 +131,77 @@ module.exports.login = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "User login failed.",
+      error: error.message,
+    });
+  }
+};
+
+module.exports.profile = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized access." });
+    }
+
+    const user = await userModel
+      .findById(req.user._id)
+      .select("-password -__v")
+      .lean();
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user,
+      message: "User profile fetched successfully.",
+    });
+  } catch (error) {
+    console.error("Error while fetching the profile:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: error.message, error });
+  }
+};
+
+module.exports.logout = async (req, res) => {
+  try {
+    const token =
+      req.cookies?.[TOKEN_NAME] ||
+      (req.headers?.authorization?.startsWith("Bearer ")
+        ? req.headers.authorization.split(" ")[1]
+        : null);
+
+    if (!token) {
+      return res.status(400).json({ message: "No token provided." });
+    }
+
+    const { value, error } = validateToken({ token });
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: error.details.map((d) => d.message),
+      });
+    }
+
+    await blackListTokenModel.create({ token: value.token });
+
+    res.clearCookie(TOKEN_NAME, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logout successful.",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error while logging out.",
       error: error.message,
     });
   }

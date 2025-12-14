@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { body } = require("express-validator");
 const routerRateLimiter = require("@configs/ratelimit.config");
-const { register, login } = require("@controllers/user.controller");
+const { register, login, profile, logout } = require("@controllers/user.controller");
+const { authentication } = require("@middlewares/user/authentication.middleware");
 
 const registerValidator = [
   body("username")
@@ -36,5 +37,9 @@ const loginValidator = [
 router.post("/register", routerRateLimiter, registerValidator, register);
 
 router.post("/login", routerRateLimiter, loginValidator, login);
+
+router.get("/profile", routerRateLimiter , authentication, profile);
+
+router.post("/logout", routerRateLimiter , authentication , logout);
 
 module.exports = router;
