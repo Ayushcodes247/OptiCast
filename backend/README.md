@@ -477,7 +477,7 @@ Authorization: Bearer <token>
 
 ### Register User
 ```bash
-curl -X POST http://localhost:5000/api/v1/users/register \
+curl -X POST http://localhost:4000/api/v1/users/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "john_doe",
@@ -488,7 +488,7 @@ curl -X POST http://localhost:5000/api/v1/users/register \
 
 ### Login User
 ```bash
-curl -X POST http://localhost:5000/api/v1/users/login \
+curl -X POST http://localhost:4000/api/v1/users/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@example.com",
@@ -498,19 +498,19 @@ curl -X POST http://localhost:5000/api/v1/users/login \
 
 ### Get Profile (Using Cookie)
 ```bash
-curl -X GET http://localhost:5000/api/v1/users/profile \
+curl -X GET http://localhost:4000/api/v1/users/profile \
   -H "Cookie: auth_token=<your_token>"
 ```
 
 ### Get Profile (Using Bearer Token)
 ```bash
-curl -X GET http://localhost:5000/api/v1/users/profile \
+curl -X GET http://localhost:4000/api/v1/users/profile \
   -H "Authorization: Bearer <your_token>"
 ```
 
 ### Logout User
 ```bash
-curl -X POST http://localhost:5000/api/v1/users/logout \
+curl -X POST http://localhost:4000/api/v1/users/logout \
   -H "Authorization: Bearer <your_token>"
 ```
 
@@ -530,7 +530,6 @@ curl -X POST http://localhost:5000/api/v1/users/logout \
 | `email` | String | ✓ | ✓ | User's email address |
 | `password` | String | ✓ | - | Bcrypt hashed password |
 | `pid` | String | ✓ | ✓ | Unique profile identifier |
-| `profilePic` | String | - | - | Profile picture URL |
 | `createdAt` | Date | ✓ | - | Account creation timestamp |
 | `updatedAt` | Date | ✓ | - | Last update timestamp |
 
@@ -571,11 +570,11 @@ SESSION_SECRET=your_session_secret_key_here
 NODE_ENV=development  # or 'production'
 
 # Database
-MONGODB_URI=mongodb://localhost:27017/opticast
-DB_NAME=opticast
+MONGODB_URI=your_db_uri
+DB_NAME=your_db_uri
 
 # Server Port
-PORT=5000
+PORT=4000
 
 # Email Configuration (if using nodemailer)
 EMAIL_USER=your_email@gmail.com
@@ -666,10 +665,10 @@ EMAIL_PASSWORD=your_app_password
 ### Using cURL
 ```bash
 # Test health
-curl http://localhost:5000/api/v1/users/profile
+curl http://localhost:4000/api/v1/users/profile
 
 # Test with token
-curl -H "Authorization: Bearer <your_token>" http://localhost:5000/api/v1/users/profile
+curl -H "Authorization: Bearer <your_token>" http://localhost:4000/api/v1/users/profile
 ```
 
 ### Using Postman
@@ -720,4 +719,4 @@ For issues, questions, or contributions:
 
 **Last Updated**: December 14, 2025  
 **API Version**: 1.0.0  
-**Status**: Production Ready ✓
+**Status**: Production Ready 
