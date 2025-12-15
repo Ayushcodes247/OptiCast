@@ -2,13 +2,16 @@ import React from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
 
 const GoogleButton = () => {
-  const handler = async () => {
-    const response = await axios.get(
-      `${import.meta.env.VITE_BASE_URL}google/auth/google/callback`
-    );
-    console.log(response.data);
+  const navigate = useNavigate();
+
+  const handler = async (response) => {
+    const { name , email } = jwtDecode(response.credential);
+    console.log("Name:",name);
+    console.log("Email:",email);
   };
 
   return (
@@ -22,11 +25,12 @@ const GoogleButton = () => {
         Login with google
       </Link> */}
 
-      <GoogleLogin onSuccess={(response) => {
-        console.log("User response:",response);
-      }} onError={(error) => {
-        console.error("User error:",error);
-      }}/>
+      <GoogleLogin
+        onSuccess={handler}
+        onError={(error) => {
+          console.error("User error:", error);
+        }}
+      />
     </div>
   );
 };

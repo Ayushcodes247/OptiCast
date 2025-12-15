@@ -473,6 +473,354 @@ Authorization: Bearer <token>
 
 ---
 
+## 🔑 Google Authentication
+
+### Overview
+Google OAuth 2.0 integration allows users to register and login using their Google accounts. This provides a seamless authentication experience without requiring users to remember additional credentials.
+
+### Google OAuth Routes
+
+#### 1. Backend Google Authentication Redirect
+```
+GET /api/v1/google/auth/google
+```
+
+**Description**: Initiates Google OAuth flow by redirecting user to Google's consent screen.
+
+**Authentication**: None (Initial redirect)
+
+**Request Headers**:
+```
+Content-Type: application/json
+```
+
+**Query Parameters**: None required
+
+**Response**: Redirects to Google OAuth consent screen
+- Requests scopes: `profile`, `email`
+- User authenticates with Google account
+- Returns to callback endpoint after authentication
+
+**Rate Limiting**: Applied (via routerRateLimiter)
+
+---
+
+#### 2. Google OAuth Callback Handler
+```
+GET /api/v1/google/auth/google/callback
+```
+
+**Description**: Handles Google OAuth callback after user authentication. Passport verifies the Google token and creates/updates user account.
+
+**Authentication**: Google OAuth token (automatic via Passport)
+
+**Response - Success (201)**:
+```json
+{
+  "success": true,
+  "message": "Registeration/Login successful through Google.",
+  "user": {
+    "_id": "user_object_id",
+    "username": "John Doe",
+    "email": "john@gmail.com",
+    "pid": "unique_pid",
+    "profilePic": "google_profile_pic_url",
+    "createdAt": "2025-12-14T10:30:00.000Z",
+    "updatedAt": "2025-12-14T10:30:00.000Z"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 604800
+}
+```
+
+**Response - Error (400)**:
+```json
+{
+  "success": false,
+  "message": "User data and authentication TOKEN is missing or expired."
+}
+```
+
+**Cookies Set**:
+- `auth_token`: JWT token (httpOnly, secure, sameSite=strict, 7 days expiry)
+
+**Rate Limiting**: Applied (via routerRateLimiter)
+
+---
+
+#### 3. Frontend Google Registration
+```
+POST /api/v1/google/handler/register
+```
+
+**Description**: Frontend-initiated Google registration. Creates new user account and sends login credentials via email. Used when registering through frontend form instead of backend redirect.
+
+**Authentication**: None required
+
+**Request Headers**:
+```
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "name": "string",
+  "email": "string"
+}
+```
+
+**Validation Rules**:
+| Field | Type | Requirements |
+|-------|------|--------------|
+| `name` | string | Minimum 3 characters, maximum 50 characters |
+| `email` | string | Valid email format (RFC 5322) |
+
+**Response - Success (201)**:
+```json
+{
+  "success": true,
+  "message": "Registeration successful through GOOGLE.",
+  "user": {
+    "_id": "user_object_id",
+    "username": "John Doe",
+    "email": "john@gmail.com",
+    "pid": "unique_pid",
+    "profilePic": "profile_picture_url",
+    "createdAt": "2025-12-14T10:30:00.000Z",
+    "updatedAt": "2025-12-14T10:30:00.000Z"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 604800
+}
+```
+
+**Response - Validation Error (400)**:
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    {
+      "type": "field",
+      "value": "ab",
+      "msg": "Username should be between 3 to 50 characters.",
+      "path": "name",
+      "location": "body"
+    }
+  ]
+}
+```
+
+**Response - User Already Exists (400)**:
+```json
+{
+  "success": false,
+  "message": "User with this email already exists."
+}
+```
+
+**Cookies Set**:
+- `auth_token`: JWT token (httpOnly, secure, sameSite=strict, 7 days expiry)
+
+**Additional Actions**:
+- Auto-generates secure random password (12 characters)
+- Sends login password to user's email
+- Creates new user account with Google provided details
+
+**Rate Limiting**: Applied (via routerRateLimiter)
+
+---
+
+#### 4. Frontend Google Login
+```
+POST /api/v1/google/handler/login
+```
+
+**Description**: Frontend-initiated Google login. Authenticates existing Google user and issues JWT token without requiring password.
+
+**Authentication**: None required (email-based)
+
+**Request Headers**:
+```
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "email": "string"
+}
+```
+
+**Validation Rules**:
+| Field | Type | Requirements |
+|-------|------|--------------|
+| `email` | string | Valid email format (RFC 5322) |
+
+**Response - Success (200)**:
+```json
+{
+  "success": true,
+  "message": "Login successful.",
+  "user": {
+    "id": "user_object_id",
+    "username": "John Doe",
+    "email": "john@gmail.com",
+    "profilePic": "profile_picture_url"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 604800
+}
+```
+
+**Response - Validation Error (400)**:
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    {
+      "type": "field",
+      "value": "invalid-email",
+      "msg": "Please provide a valid email address.",
+      "path": "email",
+      "location": "body"
+    }
+  ]
+}
+```
+
+**Response - User Not Found (401)**:
+```json
+{
+  "success": false,
+  "message": "Invalid email or user not exist's."
+}
+```
+
+**Response - Server Error (500)**:
+```json
+{
+  "success": false,
+  "message": "error_message",
+  "error": "error_object"
+}
+```
+
+**Cookies Set**:
+- `auth_token`: JWT token (httpOnly, secure, sameSite=strict, 7 days expiry)
+
+**Rate Limiting**: Applied (via routerRateLimiter)
+
+---
+
+### Google OAuth Flow Diagram
+
+```
+Backend Flow:
+1. User clicks "Login with Google"
+   ↓
+2. GET /api/v1/google/auth/google
+   ↓
+3. Redirects to Google Consent Screen
+   ↓
+4. User authenticates with Google
+   ↓
+5. Google redirects to /auth/google/callback
+   ↓
+6. Passport verifies token and creates/finds user
+   ↓
+7. User logged in with JWT token
+
+Frontend Flow:
+1. User enters email in form
+   ↓
+2. POST /api/v1/google/handler/register OR /api/v1/google/handler/login
+   ↓
+3. Create new account OR authenticate existing user
+   ↓
+4. JWT token issued
+   ↓
+5. User logged in
+```
+
+### Configuration Requirements
+
+**Environment Variables**:
+```env
+# Google OAuth (from Google Cloud Console)
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:4000/api/v1/google/auth/google/callback
+
+# Email Service (for sending login credentials)
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASSWORD=your_app_specific_password
+```
+
+**Passport Configuration**: Google strategy configured in `@configs/passport.config.js`
+
+---
+
+### Usage Examples
+
+#### Backend OAuth Flow (Using Passport)
+```bash
+# Step 1: Redirect user to this URL
+https://localhost:4000/api/v1/google/auth/google
+
+# Step 2: User authenticates and is redirected back
+# JWT token is set in auth_token cookie
+```
+
+#### Frontend Google Registration
+```bash
+curl -X POST http://localhost:4000/api/v1/google/handler/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@gmail.com"
+  }'
+```
+
+#### Frontend Google Login
+```bash
+curl -X POST http://localhost:4000/api/v1/google/handler/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@gmail.com"
+  }'
+```
+
+---
+
+### Key Features
+
+✅ **Dual Registration Methods**:
+- Backend OAuth redirect flow (Passport.js integration)
+- Frontend email-based registration/login
+
+✅ **Security**:
+- Auto-generated secure passwords for new Google users
+- Email verification (credentials sent via email)
+- Rate limiting on all endpoints
+- JWT token-based authentication
+
+✅ **User Experience**:
+- Seamless Google account integration
+- No need to remember passwords for Google users
+- Auto-profile picture from Google account
+- Quick login for existing users
+
+✅ **Data Management**:
+- Unique profile ID (pid) generation
+- Automatic user creation/update
+- Email-based user lookup
+- Profile picture integration from Google
+
+---
+
 ## Usage Examples
 
 ### Register User
