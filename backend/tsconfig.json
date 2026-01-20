@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    "baseUrl": "./src",
+    "paths": {
+      "@controllers/*": ["controllers/*"],
+      "@models/*": ["models/*"],
+      "@routes/*": ["routes/*"],
+      "@middlewares/*": ["middlewares/*"],
+      "@utils/*": ["utils/*"],
+      "@configs/*": ["configs/*"],
+      "@services/*": ["services/*"],
+      "@types/*": ["types/*"]
+    },
+
+    "typeRoots": ["./src/types", "./node_modules/@types"],
+
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "types": ["node"],
+
+    "esModuleInterop": true,
+
+    "lib": ["ES2022"],
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    "sourceMap": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

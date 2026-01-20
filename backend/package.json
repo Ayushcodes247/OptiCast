@@ -1,0 +1,52 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/server.js",
+  "type": "commonjs",
+  "_moduleAliases": {
+    "@controllers": "dist/controllers",
+    "@models": "dist/models",
+    "@routes": "dist/routes",
+    "@middlewares": "dist/middlewares",
+    "@utils": "dist/utils",
+    "@configs": "dist/configs",
+    "@services": "dist/services",
+    "@types": "dist/types"
+  },
+  "scripts": {
+    "dev": "ts-node-dev -r tsconfig-paths/register --respawn src/server.ts",
+    "build": "tsc",
+    "start": "node -r module-alias/register dist/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "express-session": "^1.18.2",
+    "express-validator": "^7.3.1",
+    "helmet": "^8.1.0",
+    "joi": "^18.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "module-alias": "^2.2.3",
+    "mongoose": "^9.1.4"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/module-alias": "^2.0.4",
+    "@types/node": "^25.0.9",
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.3.3"
+  }
+}
