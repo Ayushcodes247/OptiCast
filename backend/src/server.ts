@@ -2,13 +2,25 @@ import app from "./app";
 import { createServer } from "http";
 import { env } from "@configs/env.config";
 import { time } from "@configs/essential.config";
+import { connectToDB } from "@configs/db.config";
 
 const PORT = env.PORT;
 const server = createServer(app);
 
-server.listen(PORT, (): void => {
-  console.info(`[${time()}] OPTICAST SERVER IS RUNNING ON PORT NO.:${PORT}`);
-});
+(async (): Promise<void> => {
+  try {
+    await connectToDB();
+
+    server.listen(PORT, (): void => {
+      console.info(
+        `[${time()}] OPTICAST SERVER IS RUNNING ON PORT NO.:${PORT}`,
+      );
+    });
+  } catch (error: unknown) {
+    console.error("FAILED TO START SERVER:", error);
+    process.exit(1);
+  }
+})();
 
 process.once("unhandledRejection", (reason: unknown): void => {
   console.error(`[${time()}] UNHANDLED REJECTION:`, reason);
@@ -16,6 +28,7 @@ process.once("unhandledRejection", (reason: unknown): void => {
 
 process.once("uncaughtException", (error: Error): void => {
   console.error(`[${time()}] UNCAUGHT EXCEPTION:`, error);
+  process.exit(1);
 });
 
 const gracefulShutdown = (signal: string): void => {
