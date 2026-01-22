@@ -6,6 +6,6 @@ import { routerRateLImiter } from "@configs/essential.config";
 
 export const router = Router();
 
-router.use("/users", routerRateLImiter, ManualRouter);
+router.use("/users", ManualRouter);
 router.use("/google", routerRateLImiter, GoogleRouter);
-router.use("/video", routerRateLImiter, VideoRouter);
+router.use("/video", VideoRouter);

@@ -37,7 +37,7 @@ const apiRateLimiter = rateLimit({
   },
 });
 
-app.use("/api/", apiRateLimiter, IndexRouter);
+app.use("/api", apiRateLimiter, IndexRouter);
 
 app.use(globalErrorHandler);
 
