@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { login, register } from "@controllers/user/manual.controller";
+import { login, profile, register } from "@controllers/user/manual.controller";
 import { routerRateLImiter } from "@configs/essential.config";
 import { body, ValidationChain } from "express-validator";
+import isAuthenticated from "@middlewares/user.middleware";
 
 const registerBodyValidator: ValidationChain[] = [
   body("username")
@@ -37,3 +38,5 @@ export const router = Router();
 router.post("/register", routerRateLImiter, registerBodyValidator, register);
 
 router.post("/login", routerRateLImiter, loginBodyValidator,login);
+
+router.get("/profile", routerRateLImiter, isAuthenticated, profile);

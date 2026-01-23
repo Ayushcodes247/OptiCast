@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { UserModel, validateUserSchema } from "@models/user.model";
 import { env } from "@configs/env.config";
 import { AppError, asyncHandler } from "@utils/essentials.util";
+import { AuthenticationRequest } from "../../types/auth.types";
 
 const TOKEN_NAME = "opticast_auth_token";
 
@@ -100,6 +101,18 @@ export const login = asyncHandler(
         email: user.email,
       },
       message: "Login successful.",
+    });
+  },
+);
+
+export const profile = asyncHandler(
+  async (req: AuthenticationRequest, res: Response): Promise<void> => {
+    const user = req.user;
+
+    res.status(200).json({
+      success: true,
+      user,
+      message: "Profile fetched successfully.",
     });
   },
 );
