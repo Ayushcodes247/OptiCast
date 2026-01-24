@@ -3,8 +3,11 @@ import { UserModel, validateUserSchema } from "@models/user.model";
 import { env } from "@configs/env.config";
 import { AppError, asyncHandler } from "@utils/essentials.util";
 import { AuthenticationRequest } from "../../types/auth.types";
+import { BlackTokenModel, validateBlackToken } from "@models/balckToken.model";
+import { generateCRSFtoken } from "@utils/essentials.util";
 
 const TOKEN_NAME = "opticast_auth_token";
+const CSRF_TOKEN_NAME = "opticast_csrf_token";
 
 export const register = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -42,6 +45,15 @@ export const register = asyncHandler(
       httpOnly: true,
       secure: env.NODE_ENV === "production",
       sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+    });
+
+    const csrf_token = generateCRSFtoken();
+
+    res.cookie(CSRF_TOKEN_NAME, csrf_token, {
+      httpOnly: false,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000
     });
 
     res.status(201).json({
@@ -93,6 +105,15 @@ export const login = asyncHandler(
       sameSite: env.NODE_ENV === "production" ? "none" : "lax",
     });
 
+    const csrf_token = generateCRSFtoken();
+
+    res.cookie(CSRF_TOKEN_NAME, csrf_token, {
+      httpOnly: false,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
     res.status(200).json({
       success: true,
       user: {
@@ -113,6 +134,43 @@ export const profile = asyncHandler(
       success: true,
       user,
       message: "Profile fetched successfully.",
+    });
+  },
+);
+
+export const logout = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const token =
+      req.cookies?.[TOKEN_NAME] ||
+      (req.headers?.authorization?.startsWith("Bearer ")
+        ? req.headers.authorization?.split(" ")[1]
+        : null);
+
+    const { value, error } = validateBlackToken({ token });
+    if (error) {
+      return next(
+        new AppError(error.details.map((det) => det.message).join(", "), 400),
+      );
+    }
+
+    await BlackTokenModel.create(value);
+
+    res.clearCookie(TOKEN_NAME, {
+      maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+    });
+
+    res.clearCookie(CSRF_TOKEN_NAME, {
+      httpOnly: false,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Logout successfully.",
     });
   },
 );

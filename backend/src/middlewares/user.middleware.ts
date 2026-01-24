@@ -38,7 +38,7 @@ const isAuthenticated = asyncHandler(
       );
     }
 
-    const isBlacklisted = await BlackTokenModel.findOne({ token });
+    const isBlacklisted = await BlackTokenModel.exists({ token });
     if (isBlacklisted) {
       return next(
         new AppError("Token is blacklisted. Please login again.", 401),

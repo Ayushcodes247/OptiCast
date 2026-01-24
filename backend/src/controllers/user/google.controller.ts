@@ -3,9 +3,12 @@ import { UserModel } from "@models/user.model";
 import { env } from "@configs/env.config";
 import { AppError, asyncHandler } from "@utils/essentials.util";
 import { Request, Response, NextFunction } from "express";
+import { generateCRSFtoken } from "@utils/essentials.util";
 
 const googleClient = new OAuth2Client(env.CLIENT_ID);
 const AUTH_TOKEN = "opticast_auth_token";
+const CSRF_TOKEN_NAME = "opticast_csrf_token";
+const csrf_token = generateCRSFtoken();
 
 export const googleAuth = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -48,6 +51,12 @@ export const googleAuth = asyncHandler(
       maxAge: 1 * 24 * 60 * 60 * 1000,
       secure: env.NODE_ENV === "production",
       httpOnly: true,
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+    });
+
+    res.cookie(CSRF_TOKEN_NAME, csrf_token, {
+      httpOnly: false,
+      secure: env.NODE_ENV === "production",
       sameSite: env.NODE_ENV === "production" ? "none" : "lax",
     });
 
