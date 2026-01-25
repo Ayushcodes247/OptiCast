@@ -45,7 +45,9 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/module-alias": "^2.0.4",
+    "@types/multer": "^2.0.0",
     "@types/node": "^25.0.9",
+    "multer": "^2.0.2",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.3.3"
