@@ -9,7 +9,8 @@ export const env = {
   JWT_SECRET: process.env.JWT_SECRET || "default_jwt_secret",
   VIDEO_SECRET: process.env.VIDEO_SECRET || "default_video_secret",
   CLIENT_ID: process.env.CLIENT_ID || "google_client_id",
-  CLIENT_SECRET: process.env.CLIENT_SECRET || "google_client_secret"
+  CLIENT_SECRET: process.env.CLIENT_SECRET || "google_client_secret",
+  NSFW_THRESHOLD: process.env.NSFW_THRESHOLD || 0.7
 };
 
 if (!env) {

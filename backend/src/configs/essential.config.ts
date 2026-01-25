@@ -16,7 +16,7 @@ export const routerRateLImiter = rateLimit({
   statusCode: 429,
 });
 
-const uploadDir = path.join(__dirname, "./temp/upload");
+const uploadDir = path.join(__dirname, "../temp/upload");
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
