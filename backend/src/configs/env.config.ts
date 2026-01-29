@@ -10,7 +10,9 @@ export const env = {
   VIDEO_SECRET: process.env.VIDEO_SECRET || "default_video_secret",
   CLIENT_ID: process.env.CLIENT_ID || "google_client_id",
   CLIENT_SECRET: process.env.CLIENT_SECRET || "google_client_secret",
-  NSFW_THRESHOLD: process.env.NSFW_THRESHOLD || 0.7
+  NSFW_THRESHOLD: process.env.NSFW_THRESHOLD || 0.7,
+  HLS_ENC: process.env.HLS_ENC || "HLS_ENC_CODE",
+  BASE_URL: process.env.BASE_URL || "http://localhost:3000"
 };
 
 if (!env) {

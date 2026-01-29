@@ -1,21 +1,27 @@
 import videoQueue from "queues/video.queue";
-import { asyncHandler, AppError } from "@utils/essentials.util";
+import { AppError } from "@utils/essentials.util";
 
-const videoJob = asyncHandler(async (videoId, inputPath) => {
+interface VideoJobPayload {
+  videoId: string;
+  inputPath: string;
+}
+
+export async function enqueueVideoJob({
+  videoId,
+  inputPath,
+}: VideoJobPayload): Promise<string> {
   if (!videoId) {
-    return new AppError("VIDEO ID FOR TRANSCODING NOT PROVIDED.", 400);
+    throw new AppError("VIDEO ID FOR TRANSCODING NOT PROVIDED.", 400);
   }
 
   if (!inputPath) {
-    return new AppError("VIDEO INPUT PATH IS NOT PROVIDED.", 400);
+    throw new AppError("VIDEO INPUT PATH IS NOT PROVIDED.", 400);
   }
 
-  const job = await videoQueue.add("video-queue", {
+  const job = await videoQueue.add("transcode-video", {
     videoId,
     inputPath,
   });
 
-  return job.id;
-});
-
-export default videoJob;
+  return job.id!;
+}
