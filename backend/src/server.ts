@@ -1,3 +1,4 @@
+import "./types/index"
 import app from "./app";
 import { createServer } from "http";
 import { env } from "@configs/env.config";

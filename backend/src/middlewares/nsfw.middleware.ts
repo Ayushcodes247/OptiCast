@@ -7,7 +7,7 @@ import path from "path";
 import { randomUUID } from "crypto";
 
 const MAX_FRAMES_TO_CHECK = 300;
-const NSFW_RATIO_THRESHOLD = 0.3; 
+const NSFW_RATIO_THRESHOLD = 0.3;
 
 const isValidVideo = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -48,6 +48,9 @@ const isValidVideo = asyncHandler(
 
         if (isNSFW(predictions)) {
           nsfwCount++;
+          await remove(req.file.path).catch((e) => {
+            console.error("Error while cleaning the file path:", e);
+          });
         }
       }
 
@@ -64,8 +67,9 @@ const isValidVideo = asyncHandler(
 
       next();
     } finally {
-      await remove(req.file.path).catch((e) => { console.error("Error while cleaning the file path:", e)});
-      await remove(framesDir).catch((e) => { console.error("Error while removing frame dir:",e)});
+      await remove(framesDir).catch((e) => {
+        console.error("Error while removing frame dir:", e);
+      });
     }
   },
 );

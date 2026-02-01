@@ -1,17 +1,17 @@
 import { Queue } from "bullmq";
 import redisConnection from "@configs/redis.config";
 
-const videoQueue = new Queue("transcode-video", {
+const transcodeQueue = new Queue("transcode-queue", {
   connection: redisConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
       type: "exponential",
-      delay: 30_000,
+      delay: 1_000, // later -> 30s
     },
     removeOnComplete: true,
     removeOnFail: false,
   },
 });
 
-export default videoQueue;
+export default transcodeQueue;

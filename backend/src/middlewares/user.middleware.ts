@@ -1,6 +1,5 @@
-import { Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { AuthenticationRequest } from "../types/auth.types";
 import { BlackTokenModel } from "@models/balckToken.model";
 import { env } from "@configs/env.config";
 import { UserModel } from "@models/user.model";
@@ -14,7 +13,7 @@ const TOKEN_NAME = "opticast_auth_token";
 
 const isAuthenticated = asyncHandler(
   async (
-    req: AuthenticationRequest,
+    req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
