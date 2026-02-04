@@ -1,9 +1,48 @@
-import React from "react";
+import React, { useState } from "react";
 import GoogleAuthButton from "./GoogleButton";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { useForm } from "react-hook-form";
+import { loginAction } from "../actions/login.action";
 
 const Login = () => {
   document.title = "opticast | Login";
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    mode: "onBlur",
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const submitHandler = async () => {
+    try {
+      const response = await dispatch(loginAction({ email, password }));
+
+      setEmail("");
+      setPassword("");
+
+      if (response?.user) {
+        navigate("/dashboard");
+      } else {
+        console.error("Login Failed");
+      }
+    } catch (error) {
+      console.error("Login Failed:", error);
+      alert("Check Console an error occured while login in.");
+    }
+  };
 
   return (
     <div className="min-h-screen w-full bg-[#0E100F] flex flex-col items-center px-4">
@@ -18,32 +57,63 @@ const Login = () => {
             Login to safe upload
           </h4>
 
-          <input
-            type="email"
-            name="email"
-            placeholder="Enter your email"
-            className="bg-[#202221] mb-3 px-4 py-3 font-[ttregular] text-sm sm:text-md rounded-md shadow-xl text-[#ECECEC] outline-none"
-          />
+          <form
+            className="flex flex-col"
+            onSubmit={handleSubmit(submitHandler)}
+          >
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter your email"
+              className="bg-[#202221] mb-3 px-4 py-3 font-[ttregular] text-sm sm:text-md rounded-md shadow-xl text-[#ECECEC] outline-none"
+              {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Enter a valid email",
+                },
+              })}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            {errors.email && (
+              <p className="text-red-400">{errors.email.message}</p>
+            )}
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Enter your password"
-            className="bg-[#202221] mb-4 px-4 py-3 font-[ttregular] text-sm sm:text-md rounded-md shadow-xl text-[#ECECEC] outline-none"
-          />
+            <input
+              type="password"
+              name="password"
+              placeholder="Enter your password"
+              className="bg-[#202221] mb-4 px-4 py-3 font-[ttregular] text-sm sm:text-md rounded-md shadow-xl text-[#ECECEC] outline-none"
+              {...register("password", {
+                required: "Password is required",
+                minLength: {
+                  value: 8,
+                  message: "Password must be 8+ characters",
+                },
+              })}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {errors.password && (
+              <p className="text-red-400">{errors.password.message}</p>
+            )}
 
-          <div className="flex justify-center gap-1 items-center mb-3 font-[ttregular]">
-            <p className="text-md text-[#ececec80]">Don't have an account?</p>
-            <Link to="/register" className="text-md text-[#D6FE50]">
-              Register
-            </Link>
-          </div>
+            <div className="flex justify-center gap-1 items-center mb-3 font-[ttregular]">
+              <p className="text-md text-[#ececec80]">Don't have an account?</p>
+              <Link to="/register" className="text-md text-[#D6FE50]">
+                Register
+              </Link>
+            </div>
 
-          <button className="bg-[#D6FE50] cursor-pointer shadow-xl px-4 py-3 rounded-md font-[ttregular] font-semibold">
-            Login Account
-          </button>
+            <button
+              type="submit"
+              className="bg-[#D6FE50] cursor-pointer shadow-xl px-4 py-3 rounded-md font-[ttregular] font-semibold"
+            >
+              Login Account
+            </button>
+          </form>
 
-          {/* Divider */}
           <div className="flex items-center gap-3 my-5">
             <hr className="flex-grow border-[#ececec67]" />
             <span className="text-[#ececec67] font-[ttregular] text-sm">
