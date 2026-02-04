@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@font-face {
+    font-family: ttregular;
+    src: url("./assets/fonts/tthoves_reg.ttf");
+}
+
+@font-face {
+    font-family: sfpro;
+    src: url("./assets/fonts/SFPRODISPLAYBOLD.OTF");
+}

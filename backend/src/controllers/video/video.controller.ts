@@ -51,7 +51,6 @@ export const uploadToBack = asyncHandler(
 
     console.log("INPUT PATH:", req.file?.path)
 
-    // MUST await
     const jobId = await queue(
       videoId,
       req.file?.path,
@@ -82,3 +81,11 @@ export const uploadToBack = asyncHandler(
     });
   },
 );
+
+export const playback = asyncHandler(async (req : Request, res : Response, next : NextFunction) => {
+  const {} = req.body;
+});
+
+export const refresh = asyncHandler(async (req : Request, res : Response, next : NextFunction) => {
+
+});
