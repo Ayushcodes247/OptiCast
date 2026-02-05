@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import type { Multer } from "multer";
+import { IMediaCollection } from "@models/mediacollection.model";
 
 declare global {
   namespace Express {
@@ -13,6 +14,7 @@ declare global {
       user?: User;
       file?: Multer.File;
       files?: Multer.File[] | { [fieldname: string]: Multer.File[] };
+      mediacollection: IMediaCollection;
     }
   }
 }

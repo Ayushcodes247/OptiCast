@@ -4,6 +4,7 @@ import Register from "./Components/Register";
 import Login from "./Components/Login";
 import UserDashBoard from "./Components/UserDashBoard";
 import UserSec from "./Components/UserSec";
+import Page404 from "./Components/Page404";
 
 const App = () => {
   return (
@@ -15,6 +16,7 @@ const App = () => {
           <UserDashBoard/>
         </UserSec>
       }/>
+      <Route path="/404" element={<UserSec><Page404/></UserSec>}/>
     </Routes>
   );
 };

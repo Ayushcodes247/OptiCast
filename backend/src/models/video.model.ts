@@ -2,12 +2,13 @@ import { Schema, model, Types } from "mongoose";
 import Joi, { ValidationResult } from "joi";
 
 export interface IVideo {
-  videoname: string;
+  videoName: string;
   videoId: string;
   userId: Types.ObjectId;
   status: "queued" | "processing" | "completed" | "failed";
   jobId: string;
-  deliveryPath?: string;
+  deliveryPath?: string | null;
+  mediaCollectionId: Types.ObjectId;
 }
 
 const VideoSchema = new Schema<IVideo>(
@@ -22,11 +23,10 @@ const VideoSchema = new Schema<IVideo>(
     videoId: {
       type: String,
       required: true,
-      unique: true,
       index: true,
     },
 
-    videoname: {
+    videoName: {
       type: String,
       required: true,
       minlength: 2,
@@ -49,8 +49,14 @@ const VideoSchema = new Schema<IVideo>(
 
     deliveryPath: {
       type: String,
-      required: false,
-      default: "",
+      default: null,
+    },
+
+    mediaCollectionId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: "MediaCollection",
+      index: true,
     },
   },
   {
@@ -58,18 +64,23 @@ const VideoSchema = new Schema<IVideo>(
   },
 );
 
-VideoSchema.index({ userId: 1, videoId: 1 });
+VideoSchema.index({ userId: 1, videoId: 1 }, { unique: true });
 
 export function validateVideoSchema(data: object): ValidationResult {
   const schema = Joi.object({
     userId: Joi.string().hex().length(24).required(),
     videoId: Joi.string().required(),
-    videoname: Joi.string().min(2).max(50).required(),
+    videoName: Joi.string().min(2).max(50).required(),
     jobId: Joi.string().required(),
+
     status: Joi.string()
       .valid("queued", "processing", "completed", "failed")
       .optional(),
-  });
+
+    mediaCollectionId: Joi.string().hex().length(24).required(),
+
+    deliveryPath: Joi.string().optional(),
+  }).unknown(false);
 
   return schema.validate(data, {
     stripUnknown: true,
