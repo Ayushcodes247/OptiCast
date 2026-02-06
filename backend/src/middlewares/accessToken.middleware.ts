@@ -7,7 +7,7 @@ const isVerifiedMediaCollection = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
-  const { mediacollectionId } = req.params;
+  const { mediaCollectionId } = req.params;
 
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
@@ -15,13 +15,14 @@ const isVerifiedMediaCollection = async (
   }
 
   const token = authHeader.replace("Bearer ", "").trim();
-
-  const collection = await MediaCollectionModel.findById(mediacollectionId);
+  console.log("token",token)
+  const collection = await MediaCollectionModel.findById(mediaCollectionId);
   if (!collection) {
     return next(new AppError("Media collection not found.", 404));
   }
 
   const isTrue = await collection.compareAccessToken(token);
+  console.log(isTrue)
   if (!isTrue) {
     return next(new AppError("Invalid access token.", 403));
   }

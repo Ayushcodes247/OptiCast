@@ -1,4 +1,4 @@
-import { Schema, Types, model, Model } from "mongoose";
+import { Schema, Types, model, Model, Document } from "mongoose";
 import Joi, { ValidationResult } from "joi";
 import bcrypt from "bcrypt";
 
@@ -17,7 +17,9 @@ export interface MediaCollectionModelType extends Model<IMediaCollection> {
   hashAccessToken(candidateAccessToken: string): Promise<string>;
 }
 
-const MediaCollectionSchema = new Schema<IMediaCollection>(
+export type MediaCollectionDocument = IMediaCollection & Document;
+
+const MediaCollectionSchema = new Schema<MediaCollectionDocument>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -44,6 +46,7 @@ const MediaCollectionSchema = new Schema<IMediaCollection>(
 
     accessTokenHash: {
       type: String,
+      required: true,
       select: false,
     },
 
@@ -62,10 +65,10 @@ MediaCollectionSchema.index(
   { unique: true },
 );
 
-MediaCollectionSchema.pre("save", async function () {
+MediaCollectionSchema.pre("save", function () {
   if (this.allowedOrigins?.length) {
-    this.allowedOrigins = this.allowedOrigins.map((origins) =>
-      origins.toLowerCase().replace(/\/$/, ""),
+    this.allowedOrigins = this.allowedOrigins.map((origin) =>
+      origin.toLowerCase().replace(/\/$/, ""),
     );
   }
 });
@@ -81,7 +84,7 @@ MediaCollectionSchema.methods.isDomainAllowed = function (
   origin: string,
 ): boolean {
   const normalizedOrigin = origin.toLowerCase().replace(/\/$/, "");
-  return this.allowedDomain.includes(normalizedOrigin);
+  return this.allowedOrigins.includes(normalizedOrigin);
 };
 
 MediaCollectionSchema.statics.hashAccessToken = async function (
@@ -90,7 +93,8 @@ MediaCollectionSchema.statics.hashAccessToken = async function (
   return bcrypt.hash(candidateAccessToken, 12);
 };
 
-const domainRegex = /^https?:\/\/localhost(:\d{2,5})?$/;
+const domainRegex =
+  /^https?:\/\/(localhost|\d{1,3}(\.\d{1,3}){3}|([a-z0-9-]+\.)+[a-z]{2,})(:\d{2,5})?$/i;
 
 export function validateMediaCollectionSchema(data: object): ValidationResult {
   const schema = Joi.object({
@@ -99,7 +103,7 @@ export function validateMediaCollectionSchema(data: object): ValidationResult {
 
     videos: Joi.array().items(Joi.string().hex().length(24)).optional(),
 
-    allowedDomain: Joi.array()
+    allowedOrigins: Joi.array()
       .items(Joi.string().trim().pattern(domainRegex))
       .min(1)
       .required(),
@@ -112,6 +116,6 @@ export function validateMediaCollectionSchema(data: object): ValidationResult {
 }
 
 export const MediaCollectionModel = model<
-  IMediaCollection,
+  MediaCollectionDocument,
   MediaCollectionModelType
 >("MediaCollection", MediaCollectionSchema);
