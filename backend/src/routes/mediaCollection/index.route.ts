@@ -2,9 +2,10 @@ import { Router } from "express";
 import isAuthenticated from "@middlewares/user.middleware";
 import verifyCsrf from "@middlewares/csrf.middleware";
 import {
-    addOrigins,
+  addOrigins,
   create,
   regenerateAccessToken,
+  removeOrigin,
 } from "@controllers/mediaController/index.controller";
 import { routerRateLImiter } from "@configs/essential.config";
 import isVerifiedMediaCollection from "@middlewares/accessToken.middleware";
@@ -21,4 +22,20 @@ router.patch(
   regenerateAccessToken,
 );
 
-router.post("/:mediaCollectionId/addorigin", isAuthenticated, verifyCsrf, isVerifiedMediaCollection, routerRateLImiter, addOrigins);
+router.post(
+  "/:mediaCollectionId/addorigin",
+  isAuthenticated,
+  verifyCsrf,
+  isVerifiedMediaCollection,
+  routerRateLImiter,
+  addOrigins,
+);
+
+router.delete(
+  "/:mediaCollectionId/removeorigin",
+  isAuthenticated,
+  verifyCsrf,
+  isVerifiedMediaCollection,
+  routerRateLImiter,
+  removeOrigin,
+);

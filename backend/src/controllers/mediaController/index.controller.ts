@@ -118,3 +118,39 @@ export const addOrigins = asyncHandler(
     });
   },
 );
+
+export const removeOrigin = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { mediaCollectionId } = req.params;
+    let { removeorigin } = req.body;
+
+    if (!mediaCollectionId) {
+      return next(new AppError("Media collection id not provided.", 400));
+    }
+
+    if (!req.user?._id) {
+      return next(new AppError("Unauthorized", 401));
+    }
+
+    if (req.mediacollection?.userId.toString() !== req.user._id.toString()) {
+      return next(new AppError("Forbidden", 403));
+    }
+
+    const collection = req.mediacollection;
+
+    const normalizedRemoveOrigin = String(removeorigin)
+      .toLowerCase()
+      .replace(/\/$/, "");
+
+    collection.allowedOrigins = collection.allowedOrigins.filter(
+      (origin) => origin !== normalizedRemoveOrigin,
+    );
+
+    await collection.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Origin removed successfully.",
+    });
+  },
+);

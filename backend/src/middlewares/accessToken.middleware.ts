@@ -15,14 +15,14 @@ const isVerifiedMediaCollection = async (
   }
 
   const token = authHeader.replace("Bearer ", "").trim();
-  console.log("token",token)
-  const collection = await MediaCollectionModel.findById(mediaCollectionId);
+  const collection = await MediaCollectionModel.findOne({
+    _id: mediaCollectionId,
+  });
   if (!collection) {
     return next(new AppError("Media collection not found.", 404));
   }
 
   const isTrue = await collection.compareAccessToken(token);
-  console.log(isTrue)
   if (!isTrue) {
     return next(new AppError("Invalid access token.", 403));
   }

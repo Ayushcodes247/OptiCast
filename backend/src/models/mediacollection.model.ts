@@ -5,9 +5,10 @@ import bcrypt from "bcrypt";
 export interface IMediaCollection {
   userId: Types.ObjectId;
   mediaCollectionName: string;
-  videos: Types.ObjectId[];
+  videosId: Types.ObjectId[];
   accessTokenHash?: string;
   allowedOrigins: string[];
+  deliveryPath : string[];
 
   compareAccessToken(candidateAccessToken: string): Promise<boolean>;
   isDomainAllowed(origin: string): boolean;
@@ -37,17 +38,21 @@ const MediaCollectionSchema = new Schema<MediaCollectionDocument>(
       trim: true,
     },
 
-    videos: [
+    videosId: [
       {
         type: Schema.Types.ObjectId,
         ref: "Video",
       },
     ],
 
+    deliveryPath:{
+
+    },
+
     accessTokenHash: {
       type: String,
       required: true,
-      select: false,
+      select: true,
     },
 
     allowedOrigins: {
@@ -77,7 +82,7 @@ MediaCollectionSchema.methods.compareAccessToken = async function (
   candidateAccessToken: string,
 ): Promise<boolean> {
   if (!this.accessTokenHash) return false;
-  return bcrypt.compare(candidateAccessToken, this.accessTokenHash);
+  return await bcrypt.compare(candidateAccessToken, this.accessTokenHash);
 };
 
 MediaCollectionSchema.methods.isDomainAllowed = function (
@@ -90,7 +95,7 @@ MediaCollectionSchema.methods.isDomainAllowed = function (
 MediaCollectionSchema.statics.hashAccessToken = async function (
   candidateAccessToken: string,
 ): Promise<string> {
-  return bcrypt.hash(candidateAccessToken, 12);
+  return await bcrypt.hash(candidateAccessToken, 12);
 };
 
 const domainRegex =
