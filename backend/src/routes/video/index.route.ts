@@ -8,8 +8,8 @@ import isVerifiedMediaCollection from "@middlewares/accessToken.middleware";
 
 export const router = Router();
 
-router.post("/:mediacollectionId/upload", isAuthenticated, isVerifiedMediaCollection, verifyCSRF, upload.single("video"), isValidVideo, uploadToBack);
+router.post("/:id/upload", isAuthenticated, isVerifiedMediaCollection, verifyCSRF, upload.single("video"), isValidVideo, uploadToBack);
 
-router.get("/:mediacollectionId/playback/:videoId", isAuthenticated, isVerifiedMediaCollection,verifyCSRF, playback);
+router.get("/:id/playback/:videoId", isAuthenticated, isVerifiedMediaCollection,verifyCSRF, playback);
 
-router.get("/:mediacollectionId/refresh/palyback", isAuthenticated, isVerifiedMediaCollection,verifyCSRF, refresh);
+router.get("/:id/refresh/palyback", isAuthenticated, isVerifiedMediaCollection,verifyCSRF, refresh);

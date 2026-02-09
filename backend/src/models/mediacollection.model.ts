@@ -8,7 +8,8 @@ export interface IMediaCollection {
   videosId: Types.ObjectId[];
   accessTokenHash?: string;
   allowedOrigins: string[];
-  deliveryPath : string[];
+  deliveryPath: string[];
+  jobId: string;
 
   compareAccessToken(candidateAccessToken: string): Promise<boolean>;
   isDomainAllowed(origin: string): boolean;
@@ -42,12 +43,18 @@ const MediaCollectionSchema = new Schema<MediaCollectionDocument>(
       {
         type: Schema.Types.ObjectId,
         ref: "Video",
+        select: true,
+        required: false,
       },
     ],
 
-    deliveryPath:{
-
-    },
+    deliveryPath: [
+      {
+        type: String,
+        required: false,
+        select: true,
+      },
+    ],
 
     accessTokenHash: {
       type: String,
@@ -59,6 +66,13 @@ const MediaCollectionSchema = new Schema<MediaCollectionDocument>(
       type: [String],
       required: true,
     },
+
+    jobId : {
+      type : String,
+      required : false,
+      select : true,
+      index : true
+    }
   },
   {
     timestamps: true,

@@ -5,6 +5,7 @@ import {
 } from "@models/mediacollection.model";
 import { asyncHandler, AppError } from "@utils/essentials.util";
 import { generateAccessToken } from "@utils/accessTokenGenerate.util";
+import deletionJob from "jobs/delete.job";
 
 export const create = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -51,14 +52,13 @@ export const create = asyncHandler(
 
 export const regenerateAccessToken = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { mediaCollectionId } = req.params;
+    const { id } = req.params;
 
     if (!req.user?._id) {
       return next(new AppError("Unauthorized", 401));
     }
 
-    const findCollection =
-      await MediaCollectionModel.findById(mediaCollectionId);
+    const findCollection = await MediaCollectionModel.findById(id);
     if (!findCollection) {
       return next(new AppError("Not found.", 404));
     }
@@ -84,10 +84,10 @@ export const regenerateAccessToken = asyncHandler(
 
 export const addOrigins = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { mediaCollectionId } = req.params;
+    const { id } = req.params;
     let { allowedOrigins } = req.body;
 
-    if (!mediaCollectionId) {
+    if (!id) {
       return next(new AppError("Media collection id not provided.", 400));
     }
 
@@ -120,11 +120,11 @@ export const addOrigins = asyncHandler(
 );
 
 export const removeOrigin = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { mediaCollectionId } = req.params;
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { id } = req.params;
     let { removeorigin } = req.body;
 
-    if (!mediaCollectionId) {
+    if (!id) {
       return next(new AppError("Media collection id not provided.", 400));
     }
 
@@ -151,6 +151,35 @@ export const removeOrigin = asyncHandler(
     res.status(200).json({
       success: true,
       message: "Origin removed successfully.",
+    });
+  },
+);
+
+export const removeMediaCollection = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const collection = req.mediacollection;
+    const uid = req.user?._id;
+
+    if (!uid) {
+      return next(new AppError("Unauthorized", 401));
+    }
+
+    if (collection?.userId.toString() !== uid.toString()) {
+      return next(new AppError("Forbidden", 403));
+    }
+
+    const deletion = await deletionJob(
+      collection?._id.toString(),
+      Array(collection?.videosId.toString()),
+      collection?.deliveryPath,
+    );
+
+    await collection.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      deletionId: deletion,
+      message: "Media collection deletion initiated",
     });
   },
 );

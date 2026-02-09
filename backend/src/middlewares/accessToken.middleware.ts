@@ -7,7 +7,7 @@ const isVerifiedMediaCollection = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
-  const { mediaCollectionId } = req.params;
+  const { id } = req.params;
 
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
@@ -16,8 +16,8 @@ const isVerifiedMediaCollection = async (
 
   const token = authHeader.replace("Bearer ", "").trim();
   const collection = await MediaCollectionModel.findOne({
-    _id: mediaCollectionId,
-  });
+    _id: id,
+  }).select("-v -createdAt -updatedAt");
   if (!collection) {
     return next(new AppError("Media collection not found.", 404));
   }

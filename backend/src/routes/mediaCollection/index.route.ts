@@ -5,6 +5,7 @@ import {
   addOrigins,
   create,
   regenerateAccessToken,
+  removeMediaCollection,
   removeOrigin,
 } from "@controllers/mediaController/index.controller";
 import { routerRateLImiter } from "@configs/essential.config";
@@ -15,7 +16,7 @@ export const router = Router();
 router.post("/create", isAuthenticated, verifyCsrf, routerRateLImiter, create);
 
 router.patch(
-  "/:mediaCollectionId/regenrateAccessToken",
+  "/:id/regenrateAccessToken",
   isAuthenticated,
   verifyCsrf,
   routerRateLImiter,
@@ -23,7 +24,7 @@ router.patch(
 );
 
 router.post(
-  "/:mediaCollectionId/addorigin",
+  "/:id/addorigin",
   isAuthenticated,
   verifyCsrf,
   isVerifiedMediaCollection,
@@ -32,10 +33,12 @@ router.post(
 );
 
 router.delete(
-  "/:mediaCollectionId/removeorigin",
+  "/:id/removeorigin",
   isAuthenticated,
   verifyCsrf,
   isVerifiedMediaCollection,
   routerRateLImiter,
   removeOrigin,
 );
+
+router.delete("/:id", isAuthenticated, verifyCsrf, isVerifiedMediaCollection, routerRateLImiter, removeMediaCollection);

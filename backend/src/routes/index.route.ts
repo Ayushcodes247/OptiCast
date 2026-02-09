@@ -10,4 +10,4 @@ export const router = Router();
 router.use("/users", ManualRouter);
 router.use("/google", routerRateLImiter, GoogleRouter);
 router.use("/video", VideoRouter);
-router.use("/media/collection", MediaCollectionRouter);
+router.use("/media-collection", MediaCollectionRouter);

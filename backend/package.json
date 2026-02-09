@@ -17,11 +17,13 @@
   "scripts": {
     "dev:server": "ts-node-dev -r tsconfig-paths/register --respawn src/server.ts",
     "dev:worker": "ts-node-dev -r tsconfig-paths/register --respawn src/workers/video.worker.ts",
-    "dev": "npm-run-all --parallel dev:server dev:worker",
+    "dev:delete": "ts-node-dev -r tsconfig-paths/register --respawn src/workers/delete.worker.ts",
+    "dev": "npm-run-all --parallel dev:server dev:worker dev:delete",
     "build": "tsc",
     "start:server": "node -r module-alias/register dist/server.js",
     "start:worker": "node -r module-alias/register dist/workers/video.worker.js",
-    "start": "npm-run-all --parallel start:server start:worker"
+    "start:delete": "node -r module-alias/register dist/workers/delete.worker.js",
+    "start": "npm-run-all --parallel start:server start:worker start:delete"
   },
   "keywords": [],
   "author": "",

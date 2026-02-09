@@ -1,7 +1,7 @@
 import { Queue } from "bullmq";
 import redisConnection from "@configs/redis.config";
 
-const deleteionQueue = new Queue("delete-queue", {
+const deletionQueue = new Queue("delete-queue", {
   connection: redisConnection,
   defaultJobOptions: {
     attempts: 3,
@@ -14,4 +14,4 @@ const deleteionQueue = new Queue("delete-queue", {
   },
 });
 
-export default deleteionQueue;
+export default deletionQueue;
