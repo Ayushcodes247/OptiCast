@@ -12,7 +12,9 @@ export const env = {
   CLIENT_SECRET: process.env.CLIENT_SECRET || "google_client_secret",
   NSFW_THRESHOLD: process.env.NSFW_THRESHOLD || 0.7,
   HLS_ENC: process.env.HLS_ENC || "HLS_ENC_CODE",
-  BASE_URL: process.env.BASE_URL || "http://localhost:3000"
+  BASE_URL: process.env.BASE_URL || "http://localhost:3000",
+  COOKIE_SECRET: process.env.COOKIE_SECRET || "default_cookie_secret",
+  VIDEO_COOKIE: process.env.VIDEO_COOKIE || "default_video_cookie"
 };
 
 if (!env) {

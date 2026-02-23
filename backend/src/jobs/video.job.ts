@@ -1,7 +1,8 @@
 import transcodeQueue from "queues/video.queue";
 
-const videoJob = async (videoId: string, inputPath: string) => {
+const videoJob = async (mediaCollectionId : string, videoId: string, inputPath: string) => {
   const job = await transcodeQueue.add("transcode-queue", {
+    mediaCollectionId,
     videoId,
     inputPath,
   });

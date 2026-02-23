@@ -53,9 +53,9 @@ const toSec = (t: any): number => {
 new Worker(
   "transcode-queue",
   async (job) => {
-    console.info("🔥 PROCESSING JOB:", job.id);
+    console.info("PROCESSING JOB:", job.id);
 
-    const { videoId, inputPath } = job.data;
+    const { mediaCollectionId , videoId, inputPath } = job.data;
 
     if (!inputPath) {
       throw new Error("inputPath is missing in job.data");
@@ -73,14 +73,14 @@ new Worker(
     const duration = getDuration(absInPath);
     const audioExists = hasAudio(absInPath);
 
-    console.info("🎧 Audio detected:", audioExists);
+    console.info("Audio detected:", audioExists);
 
     const encPath = path.join(vidDir, "enc.encrypt");
     const encInfoPath = path.join(vidDir, "encInfo.txt");
     fs.writeFileSync(encPath, randomBytes(16));
 
     const encInfoData = [
-      `${env.BASE_URL}/enc/${videoId}`,
+      `${env.BASE_URL}/api/media-collection/${mediaCollectionId}/enc/${videoId}`,
       encPath,
       env.HLS_ENC,
     ].join("\n");
@@ -167,10 +167,10 @@ new Worker(
 
       ffmpeg.on("close", (code) => {
         if (code === 0) {
-          console.info("✅ PROCESSING JOB", job.id, "DONE.");
+          console.info("PROCESSING JOB", job.id, "DONE.");
           fs.unlinkSync(absInPath);
 
-          resolve({ hlsPath: `hls/${videoId}/master.m3u8` });
+          resolve({ hlsPath: `${mediaCollectionId}/hls/${videoId}/master.m3u8` });
         } else {
           safeCleanUp(vidDir);
           reject(new Error("FFmpeg failed with code " + code));

@@ -6,6 +6,7 @@ import {
 import { asyncHandler, AppError } from "@utils/essentials.util";
 import { generateAccessToken } from "@utils/accessTokenGenerate.util";
 import deletionJob from "jobs/delete.job";
+import { validateSettings, Settings } from "@models/settings.model";
 
 export const create = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -180,6 +181,67 @@ export const removeMediaCollection = asyncHandler(
       success: true,
       deletionId: deletion,
       message: "Media collection deletion initiated",
+    });
+  },
+);
+
+export const setting = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { iconColor } = req.body;
+    let { playbackSpeed } = req.body;
+
+    const collection = req.mediacollection;
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return next(new AppError("Unauthorized", 401));
+    }
+
+    if (!collection || collection._id.toString() !== id) {
+      return next(new AppError("Media collection not found.", 404));
+    }
+
+    if (collection.userId.toString() !== userId.toString()) {
+      return next(new AppError("Forbidden", 403));
+    }
+
+    if (playbackSpeed && !Array.isArray(playbackSpeed)) {
+      playbackSpeed = [playbackSpeed];
+    }
+
+    const existingSettings = await Settings.findOne({
+      userId,
+      mediaCollectionId: collection._id,
+    });
+
+    const data = {
+      userId: userId.toString(),
+      mediaCollectionId: collection._id.toString(),
+      playbackSpeed: playbackSpeed ?? existingSettings?.playbackSpeed ?? [1],
+      iconColor: iconColor ?? existingSettings?.iconColor ?? "#00C950",
+    };
+
+    const { value, error } = validateSettings(data);
+    if (error) {
+      return next(
+        new AppError(error.details.map((d) => d.message).join(", "), 400),
+      );
+    }
+
+    const settings = await Settings.findOneAndUpdate(
+      { userId, mediaCollectionId: collection._id },
+      value,
+      { upsert: true, new: true },
+    );
+
+    res.status(200).json({
+      success: true,
+      settings: {
+        playbackSpeed: settings.playbackSpeed,
+        iconColor: settings.iconColor,
+      },
+      message: "Settings saved successfully.",
     });
   },
 );

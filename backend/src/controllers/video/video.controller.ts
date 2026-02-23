@@ -6,6 +6,8 @@ import { Video, validateVideoSchema } from "@models/video.model";
 import { randomUUID } from "crypto";
 import queue from "../../jobs/video.job";
 import { MediaCollectionModel } from "@models/mediacollection.model";
+import { env } from "@configs/env.config";
+import { generateSignedCookie } from "@utils/signedCookie.util";
 
 const event = new QueueEvents("transcode-queue", {
   connection: redisConnection,
@@ -76,12 +78,12 @@ export const uploadToBack = asyncHandler(
     const videoId = randomUUID();
     const { videoname } = req.body;
 
-    const jobId = await queue(videoId, req.file.path);
+    const jobId = await queue(id.toString(), videoId, req.file.path);
 
     const videoDataObject = {
       videoId,
       userId: req.user._id.toString(),
-      videoname,
+      videoName: videoname,
       jobId,
       status: "queued",
       mediaCollectionId: collection?._id.toString(),
@@ -111,9 +113,39 @@ export const uploadToBack = asyncHandler(
   },
 );
 
-export const playback = asyncHandler(
+export const requestVideo = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const {} = req.body;
+    const { id, videoId } = req.params;
+    const collection = req.mediacollection;
+
+    if (!collection || collection._id.toString() !== id) {
+      return next(new AppError("Media collection not found.", 404));
+    }
+
+    const token = generateSignedCookie(id, String(videoId));
+
+    res.cookie(env.VIDEO_COOKIE, token, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 1000,
+      path: `/api/video/${id}/stream/${videoId}`,
+    });
+
+    res.status(303).redirect(`/api/video/${id}/stream/${videoId}`);
+  },
+);
+
+export const stream = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const collection = req.mediacollection;
+    const { id, videoId } = req.params;
+
+    if (!collection || collection?._id.toString() !== id) {
+      return next(new AppError("Media collection not found.", 404));
+    }
+
+    
   },
 );
 

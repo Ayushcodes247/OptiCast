@@ -7,6 +7,7 @@ import {
   regenerateAccessToken,
   removeMediaCollection,
   removeOrigin,
+  setting,
 } from "@controllers/mediaController/index.controller";
 import { routerRateLImiter } from "@configs/essential.config";
 import isVerifiedMediaCollection from "@middlewares/accessToken.middleware";
@@ -40,5 +41,7 @@ router.delete(
   routerRateLImiter,
   removeOrigin,
 );
+
+router.post("/:id/settings", isAuthenticated, verifyCsrf, isVerifiedMediaCollection, routerRateLImiter, setting);
 
 router.delete("/:id", isAuthenticated, verifyCsrf, isVerifiedMediaCollection, routerRateLImiter, removeMediaCollection);
