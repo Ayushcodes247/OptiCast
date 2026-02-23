@@ -80,7 +80,7 @@ new Worker(
     fs.writeFileSync(encPath, randomBytes(16));
 
     const encInfoData = [
-      `${env.BASE_URL}/api/media-collection/${mediaCollectionId}/enc/${videoId}`,
+      `${env.BASE_URL}/api/hls/enc/${videoId}`,
       encPath,
       env.HLS_ENC,
     ].join("\n");
@@ -170,7 +170,7 @@ new Worker(
           console.info("PROCESSING JOB", job.id, "DONE.");
           fs.unlinkSync(absInPath);
 
-          resolve({ hlsPath: `${mediaCollectionId}/hls/${videoId}/master.m3u8` });
+          resolve({ hlsPath: `/hls/${videoId}/master.m3u8` });
         } else {
           safeCleanUp(vidDir);
           reject(new Error("FFmpeg failed with code " + code));

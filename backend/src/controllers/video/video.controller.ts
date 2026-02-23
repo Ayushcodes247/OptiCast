@@ -78,7 +78,7 @@ export const uploadToBack = asyncHandler(
     const videoId = randomUUID();
     const { videoname } = req.body;
 
-    const jobId = await queue(id.toString(), videoId, req.file.path);
+    const jobId = await queue(videoId, req.file.path);
 
     const videoDataObject = {
       videoId,
@@ -129,7 +129,7 @@ export const requestVideo = asyncHandler(
       secure: env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 60 * 1000,
-      path: `/api/video/${id}/stream/${videoId}`,
+      signed: true,
     });
 
     res.status(303).redirect(`/api/video/${id}/stream/${videoId}`);
@@ -138,14 +138,33 @@ export const requestVideo = asyncHandler(
 
 export const stream = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const collection = req.mediacollection;
     const { id, videoId } = req.params;
+    const collection = req.mediacollection;
+    const payload = req.playback;
 
-    if (!collection || collection?._id.toString() !== id) {
+    if (!collection || collection._id.toString() !== id) {
       return next(new AppError("Media collection not found.", 404));
     }
 
-    
+    if (!payload) {
+      return next(new AppError("Playback token missing.", 401));
+    }
+
+    if (payload.mediaCollectionId !== id || payload.videoId !== videoId) {
+      return next(new AppError("Playback token mismatch.", 403));
+    }
+
+    const video = await Video.findOne({
+      videoId,
+      mediaCollectionId: collection._id,
+      status: "completed",
+    });
+
+    if (!video || !video.deliveryPath) {
+      return next(new AppError("Video not ready for streaming.", 404));
+    }
+
+    res.redirect(302, video.deliveryPath);
   },
 );
 

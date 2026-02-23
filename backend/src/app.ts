@@ -9,9 +9,10 @@ import {
 import { env } from "@configs/env.config";
 import { rateLimit } from "express-rate-limit";
 import { router as IndexRouter } from "@routes/index.route";
+import path from "path";
+import verifyCookie from "@middlewares/verifyCookie.middleware";
 
 const app = express();
-
 app.use(helmet());
 app.use(helmet.hsts({ maxAge: 31536000, includeSubDomains: true }));
 
@@ -24,8 +25,11 @@ app.use(
 );
 
 app.use(cookieParser(env.COOKIE_SECRET));
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+
+app.use("/hls", verifyCookie, express.static(path.join(__dirname, "hls")));
 
 const apiRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
