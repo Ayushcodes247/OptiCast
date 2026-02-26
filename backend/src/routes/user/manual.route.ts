@@ -1,10 +1,24 @@
+/**
+ * ---------------------------------------------------------
+ * MANUAL AUTH ROUTES
+ * ---------------------------------------------------------
+ */
+
 import { Router } from "express";
-import { login, logout, profile, register } from "@controllers/user/manual.controller";
+import {
+  login,
+  logout,
+  profile,
+  register,
+} from "@controllers/user/manual.controller";
 import { routerRateLImiter } from "@configs/essential.config";
 import { body, ValidationChain } from "express-validator";
 import isAuthenticated from "@middlewares/user.middleware";
 import verifyCsrf from "@middlewares/csrf.middleware";
 
+/**
+ * Request Validators
+ */
 const registerBodyValidator: ValidationChain[] = [
   body("username")
     .trim()
@@ -36,10 +50,22 @@ const loginBodyValidator: ValidationChain[] = [
 
 export const router = Router();
 
+/**
+ * Register
+ */
 router.post("/register", routerRateLImiter, registerBodyValidator, register);
 
-router.post("/login", routerRateLImiter, loginBodyValidator,login);
+/**
+ * Login
+ */
+router.post("/login", routerRateLImiter, loginBodyValidator, login);
 
+/**
+ * Get Profile (Authenticated + CSRF Protected)
+ */
 router.get("/profile", routerRateLImiter, isAuthenticated, verifyCsrf, profile);
 
+/**
+ * Logout
+ */
 router.post("/logout", routerRateLImiter, isAuthenticated, verifyCsrf, logout);

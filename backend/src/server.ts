@@ -1,4 +1,15 @@
-import "./types/index"
+/**
+ * ---------------------------------------------------------
+ * SERVER ENTRY POINT
+ * ---------------------------------------------------------
+ * - Initializes DB connection
+ * - Starts HTTP server
+ * - Handles process-level errors
+ * - Implements graceful shutdown
+ * ---------------------------------------------------------
+ */
+
+import "./types/index";
 import app from "./app";
 import { createServer } from "http";
 import { env } from "@configs/env.config";
@@ -8,6 +19,10 @@ import { connectToDB } from "@configs/db.config";
 const PORT = env.PORT;
 const server = createServer(app);
 
+/**
+ * Bootstrap Application
+ * Connect to DB first, then start server.
+ */
 (async (): Promise<void> => {
   try {
     await connectToDB();
@@ -23,15 +38,27 @@ const server = createServer(app);
   }
 })();
 
+/**
+ * Handle unhandled promise rejections
+ */
 process.once("unhandledRejection", (reason: unknown): void => {
   console.error(`[${time()}] UNHANDLED REJECTION:`, reason);
 });
 
+/**
+ * Handle uncaught exceptions
+ */
 process.once("uncaughtException", (error: Error): void => {
   console.error(`[${time()}] UNCAUGHT EXCEPTION:`, error);
   process.exit(1);
 });
 
+/**
+ * Graceful shutdown handler
+ * - Stops accepting new connections
+ * - Allows ongoing requests to complete
+ * - Forces shutdown after 30 seconds
+ */
 const gracefulShutdown = (signal: string): void => {
   console.info(`[${time()}] RECEIVED ${signal}. SHUTTING DOWN SERVER...`);
 

@@ -8,6 +8,8 @@ import queue from "../../jobs/video.job";
 import { MediaCollectionModel } from "@models/mediacollection.model";
 import { env } from "@configs/env.config";
 import { generateSignedCookie } from "@utils/signedCookie.util";
+import fs from "fs";
+import path from "path";
 
 const event = new QueueEvents("transcode-queue", {
   connection: redisConnection,
@@ -169,5 +171,86 @@ export const stream = asyncHandler(
 );
 
 export const refresh = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {},
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const collection = req.mediacollection;
+    const payload = req.playback;
+
+    if (!collection || collection._id.toString() !== id) {
+      return next(new AppError("Media collection not found.", 404));
+    }
+
+    if (!payload) {
+      return next(new AppError("Playback token missing.", 401));
+    }
+
+    if (payload.mediaCollectionId !== id) {
+      return next(new AppError("Playback token mismatch.", 403));
+    }
+
+    const newToken = generateSignedCookie(
+      payload.mediaCollectionId,
+      payload.videoId,
+    );
+
+    res.cookie(env.VIDEO_COOKIE, newToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 1000,
+      signed: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Playback token refreshed",
+    });
+  },
+);
+
+export const deleteStream = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id, videoId } = req.params;
+    const collection = req.mediacollection;
+    const userId = req.user?._id;
+
+    if (!collection || collection._id.toString() !== id) {
+      return next(new AppError("Media collection not found.", 404));
+    }
+
+    if (collection.userId.toString() !== userId?.toString()) {
+      return next(new AppError("Forbidden", 403));
+    }
+
+    const video = await Video.findOne({
+      videoId: String(videoId),
+      mediaCollectionId: collection._id,
+    });
+
+    console.log(video)
+
+    if (!video) {
+      return next(new AppError("Video not found.", 404));
+    }
+
+    await Video.deleteOne({ _id: video._id });
+
+    collection.videosId = collection.videosId.filter(
+      (v) => v.toString() !== video._id.toString(),
+    );
+
+    await collection.save();
+
+    if (video.deliveryPath) {
+      fs.rmSync(`./hls/${videoId}`, {
+        recursive: true,
+        force: true,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Video deleted successfully.",
+    });
+  },
 );

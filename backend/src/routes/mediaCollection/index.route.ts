@@ -4,6 +4,7 @@ import verifyCsrf from "@middlewares/csrf.middleware";
 import {
   addOrigins,
   create,
+  getSettings,
   regenerateAccessToken,
   removeMediaCollection,
   removeOrigin,
@@ -11,6 +12,7 @@ import {
 } from "@controllers/mediaController/index.controller";
 import { routerRateLImiter } from "@configs/essential.config";
 import isVerifiedMediaCollection from "@middlewares/accessToken.middleware";
+import verifyCookie from "@middlewares/verifyCookie.middleware";
 
 export const router = Router();
 
@@ -43,5 +45,7 @@ router.delete(
 );
 
 router.post("/:id/settings", isAuthenticated, verifyCsrf, isVerifiedMediaCollection, routerRateLImiter, setting);
+
+router.get("/:id/settings", verifyCookie, isVerifiedMediaCollection, getSettings);
 
 router.delete("/:id", isAuthenticated, verifyCsrf, isVerifiedMediaCollection, routerRateLImiter, removeMediaCollection);

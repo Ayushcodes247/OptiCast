@@ -186,7 +186,7 @@ export const removeMediaCollection = asyncHandler(
 );
 
 export const setting = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
     const { iconColor } = req.body;
     let { playbackSpeed } = req.body;
@@ -242,6 +242,35 @@ export const setting = asyncHandler(
         iconColor: settings.iconColor,
       },
       message: "Settings saved successfully.",
+    });
+  },
+);
+
+export const getSettings = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { id } = req.params;
+    const playback = req.playback;
+    const collection = req.mediacollection;
+
+    if (!collection || collection._id.toString() !== id) {
+      return next(new AppError("Media collection not found.", 404));
+    }
+
+    if (!playback || playback.mediaCollectionId !== id) {
+      return next(new AppError("Media collection mismatch.", 403));
+    }
+
+    const settings = await Settings.findOne({
+      mediaCollectionId: collection._id,
+    }).lean();
+
+    res.status(200).json({
+      success: true,
+      settings: {
+        playbackSpeed: settings?.playbackSpeed ?? [1],
+        iconColor: settings?.iconColor ?? "#000000",
+      },
+      message: "Settings retrieved successfully.",
     });
   },
 );

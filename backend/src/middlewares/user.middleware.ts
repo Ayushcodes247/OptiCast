@@ -1,3 +1,13 @@
+/**
+ * ---------------------------------------------------------
+ * AUTHENTICATION MIDDLEWARE
+ * ---------------------------------------------------------
+ * - Verifies JWT
+ * - Checks blacklist
+ * - Attaches sanitized user to req.user
+ * ---------------------------------------------------------
+ */
+
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { BlackTokenModel } from "@models/balckToken.model";
@@ -12,20 +22,23 @@ interface AuthPayload extends JwtPayload {
 const TOKEN_NAME = "opticast_auth_token";
 
 const isAuthenticated = asyncHandler(
-  async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    /**
+     * Retrieve token from cookie or Authorization header
+     */
     const token =
       req.cookies?.[TOKEN_NAME] ||
       (req.headers.authorization?.startsWith("Bearer ")
         ? req.headers?.authorization?.split(" ")[1]
         : null);
+
     if (!token) {
       return next(new AppError("Authentication Token is missing.", 401));
     }
 
+    /**
+     * Verify JWT
+     */
     let decoded: AuthPayload;
     try {
       decoded = jwt.verify(token, env.JWT_SECRET, {
@@ -37,6 +50,9 @@ const isAuthenticated = asyncHandler(
       );
     }
 
+    /**
+     * Check if token is blacklisted
+     */
     const isBlacklisted = await BlackTokenModel.exists({ token });
     if (isBlacklisted) {
       return next(
@@ -44,13 +60,20 @@ const isAuthenticated = asyncHandler(
       );
     }
 
+    /**
+     * Fetch user (lean for performance)
+     */
     const user = await UserModel.findById(decoded._id)
       .select("-password -__v -createdAt -updatedAt -socketId")
       .lean();
+
     if (!user) {
       return next(new AppError("User not found.", 404));
     }
 
+    /**
+     * Attach user to request
+     */
     req.user = user;
 
     next();
