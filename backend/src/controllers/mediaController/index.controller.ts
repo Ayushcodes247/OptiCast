@@ -1,3 +1,15 @@
+/**
+ * ---------------------------------------------------------
+ * MEDIA COLLECTION CONTROLLER
+ * ---------------------------------------------------------
+ * Business logic for:
+ * - Collection lifecycle
+ * - Origin validation
+ * - Playback UI settings
+ * - Secure access token handling
+ * ---------------------------------------------------------
+ */
+
 import { Request, Response, NextFunction } from "express";
 import {
   MediaCollectionModel,
@@ -8,6 +20,9 @@ import { generateAccessToken } from "@utils/accessTokenGenerate.util";
 import deletionJob from "jobs/delete.job";
 import { validateSettings, Settings } from "@models/settings.model";
 
+/**
+ * Create media collection
+ */
 export const create = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { mediaCollectionName, allowedOrigins } = req.body;
@@ -17,7 +32,7 @@ export const create = asyncHandler(
     }
 
     const data = {
-      userId: req.user?._id.toString(),
+      userId: req.user._id.toString(),
       mediaCollectionName,
       allowedOrigins: [allowedOrigins],
     };
@@ -51,6 +66,9 @@ export const create = asyncHandler(
   },
 );
 
+/**
+ * Regenerate access token for a collection
+ */
 export const regenerateAccessToken = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
@@ -83,24 +101,22 @@ export const regenerateAccessToken = asyncHandler(
   },
 );
 
+/**
+ * Add allowed origins
+ */
 export const addOrigins = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { id } = req.params;
     let { allowedOrigins } = req.body;
-
-    if (!id) {
-      return next(new AppError("Media collection id not provided.", 400));
-    }
 
     if (!req.user?._id) {
       return next(new AppError("Unauthorized", 401));
     }
 
-    if (req.mediacollection?.userId.toString() !== req.user._id.toString()) {
+    const collection = req.mediacollection;
+
+    if (collection?.userId.toString() !== req.user._id.toString()) {
       return next(new AppError("Forbidden", 403));
     }
-
-    const collection = req.mediacollection;
 
     if (!Array.isArray(allowedOrigins)) {
       allowedOrigins = [allowedOrigins];
@@ -120,24 +136,22 @@ export const addOrigins = asyncHandler(
   },
 );
 
+/**
+ * Remove a specific allowed origin
+ */
 export const removeOrigin = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { id } = req.params;
     let { removeorigin } = req.body;
-
-    if (!id) {
-      return next(new AppError("Media collection id not provided.", 400));
-    }
 
     if (!req.user?._id) {
       return next(new AppError("Unauthorized", 401));
     }
 
-    if (req.mediacollection?.userId.toString() !== req.user._id.toString()) {
+    const collection = req.mediacollection;
+
+    if (collection?.userId.toString() !== req.user._id.toString()) {
       return next(new AppError("Forbidden", 403));
     }
-
-    const collection = req.mediacollection;
 
     const normalizedRemoveOrigin = String(removeorigin)
       .toLowerCase()
@@ -156,6 +170,10 @@ export const removeOrigin = asyncHandler(
   },
 );
 
+/**
+ * Delete media collection
+ * - Triggers async deletion job
+ */
 export const removeMediaCollection = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const collection = req.mediacollection;
@@ -170,9 +188,9 @@ export const removeMediaCollection = asyncHandler(
     }
 
     const deletion = await deletionJob(
-      collection?._id.toString(),
-      Array(collection?.videosId.toString()),
-      collection?.deliveryPath,
+      collection._id.toString(),
+      Array(collection.videosId.toString()),
+      collection.deliveryPath,
     );
 
     await collection.deleteOne();
@@ -185,9 +203,11 @@ export const removeMediaCollection = asyncHandler(
   },
 );
 
+/**
+ * Save / update playback UI settings
+ */
 export const setting = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { id } = req.params;
     const { iconColor } = req.body;
     let { playbackSpeed } = req.body;
 
@@ -198,11 +218,7 @@ export const setting = asyncHandler(
       return next(new AppError("Unauthorized", 401));
     }
 
-    if (!collection || collection._id.toString() !== id) {
-      return next(new AppError("Media collection not found.", 404));
-    }
-
-    if (collection.userId.toString() !== userId.toString()) {
+    if (collection?.userId.toString() !== userId.toString()) {
       return next(new AppError("Forbidden", 403));
     }
 
@@ -217,7 +233,7 @@ export const setting = asyncHandler(
 
     const data = {
       userId: userId.toString(),
-      mediaCollectionId: collection._id.toString(),
+      mediaCollectionId: collection?._id.toString(),
       playbackSpeed: playbackSpeed ?? existingSettings?.playbackSpeed ?? [1],
       iconColor: iconColor ?? existingSettings?.iconColor ?? "#00C950",
     };
@@ -246,17 +262,19 @@ export const setting = asyncHandler(
   },
 );
 
+/**
+ * Fetch playback settings for public embed
+ */
 export const getSettings = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { id } = req.params;
     const playback = req.playback;
     const collection = req.mediacollection;
 
-    if (!collection || collection._id.toString() !== id) {
+    if (!collection) {
       return next(new AppError("Media collection not found.", 404));
     }
 
-    if (!playback || playback.mediaCollectionId !== id) {
+    if (!playback || playback.mediaCollectionId !== collection._id.toString()) {
       return next(new AppError("Media collection mismatch.", 403));
     }
 

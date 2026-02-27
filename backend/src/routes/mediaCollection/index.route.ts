@@ -1,3 +1,21 @@
+/**
+ * ---------------------------------------------------------
+ * MEDIA COLLECTION ROUTES
+ * ---------------------------------------------------------
+ * Handles:
+ * - Media collection creation & deletion
+ * - Access token regeneration
+ * - Allowed origin management
+ * - Playback UI settings
+ *
+ * Security layers used:
+ * - User authentication (JWT)
+ * - CSRF protection
+ * - Media collection access token verification
+ * - Cookie-based playback verification (public embedding)
+ * ---------------------------------------------------------
+ */
+
 import { Router } from "express";
 import isAuthenticated from "@middlewares/user.middleware";
 import verifyCsrf from "@middlewares/csrf.middleware";
@@ -16,8 +34,17 @@ import verifyCookie from "@middlewares/verifyCookie.middleware";
 
 export const router = Router();
 
+/**
+ * Create a new media collection
+ * - Authenticated user only
+ * - CSRF protected
+ */
 router.post("/create", isAuthenticated, verifyCsrf, routerRateLImiter, create);
 
+/**
+ * Regenerate media collection access token
+ * - Owner only
+ */
 router.patch(
   "/:id/regenrateAccessToken",
   isAuthenticated,
@@ -26,6 +53,9 @@ router.patch(
   regenerateAccessToken,
 );
 
+/**
+ * Add allowed origins to media collection
+ */
 router.post(
   "/:id/addorigin",
   isAuthenticated,
@@ -35,6 +65,9 @@ router.post(
   addOrigins,
 );
 
+/**
+ * Remove allowed origin from media collection
+ */
 router.delete(
   "/:id/removeorigin",
   isAuthenticated,
@@ -44,8 +77,41 @@ router.delete(
   removeOrigin,
 );
 
-router.post("/:id/settings", isAuthenticated, verifyCsrf, isVerifiedMediaCollection, routerRateLImiter, setting);
+/**
+ * Update playback UI settings
+ * - Speed options
+ * - Icon color
+ */
+router.post(
+  "/:id/settings",
+  isAuthenticated,
+  verifyCsrf,
+  isVerifiedMediaCollection,
+  routerRateLImiter,
+  setting,
+);
 
-router.get("/:id/settings", verifyCookie, isVerifiedMediaCollection, getSettings);
+/**
+ * Get playback UI settings (public embed)
+ * - Cookie based playback verification
+ * - No user auth required
+ */
+router.get(
+  "/:id/settings",
+  verifyCookie,
+  isVerifiedMediaCollection,
+  getSettings,
+);
 
-router.delete("/:id", isAuthenticated, verifyCsrf, isVerifiedMediaCollection, routerRateLImiter, removeMediaCollection);
+/**
+ * Delete entire media collection
+ * - Triggers background deletion job
+ */
+router.delete(
+  "/:id",
+  isAuthenticated,
+  verifyCsrf,
+  isVerifiedMediaCollection,
+  routerRateLImiter,
+  removeMediaCollection,
+);

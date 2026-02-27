@@ -1,5 +1,8 @@
 import deletionQueue from "queues/delete.queue";
 
+/**
+ * Adds a deletion job to queue
+ */
 const deletionJob = async (
   mediaCollectionId: string,
   videoIds: string[],

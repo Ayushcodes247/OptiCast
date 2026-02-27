@@ -1,3 +1,20 @@
+/**
+ * ---------------------------------------------------------
+ * VIDEO TRANSCODING WORKER
+ * ---------------------------------------------------------
+ * Queue: transcode-queue
+ * Engine: BullMQ Worker
+ * Tool: FFmpeg (HLS multi-bitrate + AES encryption)
+ *
+ * Responsibilities:
+ * - Transcode video into multiple qualities
+ * - Generate adaptive bitrate HLS output
+ * - Encrypt segments (AES-128)
+ * - Report progress back to queue
+ * - Cleanup on failure
+ * ---------------------------------------------------------
+ */
+
 import { Worker } from "bullmq";
 import { spawn, execSync } from "child_process";
 import { env } from "../configs/env.config";
@@ -6,6 +23,9 @@ import { randomBytes } from "crypto";
 import fs from "fs";
 import path from "path";
 
+/**
+ * Adaptive bitrate ladder
+ */
 const QUALITIES = [
   { name: "144p", w: 256, h: 144, br: "150k" },
   { name: "240p", w: 426, h: 240, br: "300k" },
@@ -17,8 +37,14 @@ const QUALITIES = [
   { name: "2160p", w: 3840, h: 2160, br: "16000k" },
 ];
 
+/**
+ * Base HLS output directory
+ */
 const outDir = path.resolve(__dirname, "../hls");
 
+/**
+ * Extract video duration using ffprobe
+ */
 const getDuration = (file: string): number => {
   return parseFloat(
     execSync(
@@ -27,10 +53,16 @@ const getDuration = (file: string): number => {
   );
 };
 
+/**
+ * Safe directory cleanup
+ */
 const safeCleanUp = (dir: string) => {
   if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
 };
 
+/**
+ * Detect whether input contains audio stream
+ */
 const hasAudio = (file: string): boolean => {
   try {
     const output = execSync(
@@ -45,17 +77,25 @@ const hasAudio = (file: string): boolean => {
   }
 };
 
+/**
+ * Convert HH:MM:SS.mmm to seconds
+ */
 const toSec = (t: any): number => {
   const [h, m, s] = t.split(":");
   return Number(h) * 3600 + Number(m) * 60 + parseFloat(s);
 };
 
+/**
+ * ---------------------------------------------------------
+ * WORKER INSTANCE
+ * ---------------------------------------------------------
+ */
 new Worker(
   "transcode-queue",
   async (job) => {
     console.info("PROCESSING JOB:", job.id);
 
-    const { mediaCollectionId , videoId, inputPath } = job.data;
+    const { videoId, inputPath } = job.data;
 
     if (!inputPath) {
       throw new Error("inputPath is missing in job.data");
@@ -63,9 +103,15 @@ new Worker(
 
     const absInPath = path.resolve(inputPath);
 
+    /**
+     * Create video-specific HLS directory
+     */
     const vidDir = path.join(outDir, videoId);
     fs.mkdirSync(vidDir, { recursive: true });
 
+    /**
+     * Create subfolders for each quality
+     */
     QUALITIES.forEach((_, i) => {
       fs.mkdirSync(path.join(vidDir, `v${i}`), { recursive: true });
     });
@@ -75,8 +121,12 @@ new Worker(
 
     console.info("Audio detected:", audioExists);
 
+    /**
+     * Generate AES-128 encryption key
+     */
     const encPath = path.join(vidDir, "enc.encrypt");
     const encInfoPath = path.join(vidDir, "encInfo.txt");
+
     fs.writeFileSync(encPath, randomBytes(16));
 
     const encInfoData = [
@@ -84,8 +134,12 @@ new Worker(
       encPath,
       env.HLS_ENC,
     ].join("\n");
+
     fs.writeFileSync(encInfoPath, encInfoData);
 
+    /**
+     * Build scale filter for all qualities
+     */
     const filter = QUALITIES.map(
       (q, i) => `[0:v]scale=${q.w}:${q.h}:flags=fast_bilinear[v${i}]`,
     ).join(";");
@@ -111,6 +165,9 @@ new Worker(
       "yuv420p",
     ];
 
+    /**
+     * Map video + optional audio for each variant
+     */
     QUALITIES.forEach((q, i) => {
       args.push("-map", `[v${i}]`);
 
@@ -130,10 +187,16 @@ new Worker(
       args.push(`-c:v:${i}`, "libx264", `-b:v:${i}`, q.br);
     });
 
+    /**
+     * Variant stream mapping
+     */
     const streamMap = audioExists
       ? QUALITIES.map((_, i) => `v:${i},a:${i}`).join(" ")
       : QUALITIES.map((_, i) => `v:${i}`).join(" ");
 
+    /**
+     * HLS configuration
+     */
     args.push(
       "-f",
       "hls",
@@ -155,9 +218,15 @@ new Worker(
       "-y",
     );
 
+    /**
+     * Spawn FFmpeg
+     */
     return new Promise((resolve, reject) => {
       const ffmpeg = spawn("ffmpeg", args);
 
+      /**
+       * Track progress via stderr time parsing
+       */
       ffmpeg.stderr.on("data", (det) => {
         const m = det.toString().match(/time=(\d+:\d+:\d+\.\d+)/);
         if (!m) return;
@@ -168,7 +237,7 @@ new Worker(
       ffmpeg.on("close", (code) => {
         if (code === 0) {
           console.info("PROCESSING JOB", job.id, "DONE.");
-          fs.unlinkSync(absInPath);
+          fs.unlinkSync(absInPath); // delete original upload
 
           resolve({ hlsPath: `/hls/${videoId}/master.m3u8` });
         } else {

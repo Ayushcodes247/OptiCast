@@ -1,3 +1,23 @@
+/**
+ * ---------------------------------------------------------
+ * VIDEO ROUTES
+ * ---------------------------------------------------------
+ * Security order is intentional:
+ *
+ * Upload:
+ * 1. Auth
+ * 2. Collection validation
+ * 3. CSRF
+ * 4. File upload
+ * 5. NSFW validation
+ * 6. Queue
+ *
+ * Stream:
+ * 1. Collection validation
+ * 2. Playback cookie verification
+ * ---------------------------------------------------------
+ */
+
 import { Router } from "express";
 import verifyCSRF from "@middlewares/csrf.middleware";
 import isAuthenticated from "@middlewares/user.middleware";
@@ -47,4 +67,10 @@ router.get(
   refresh,
 );
 
-router.delete("/:id/stream/:videoId", isAuthenticated,verifyCSRF,isVerifiedMediaCollection, deleteStream);
+router.delete(
+  "/:id/stream/:videoId",
+  isAuthenticated,
+  verifyCSRF,
+  isVerifiedMediaCollection,
+  deleteStream,
+);

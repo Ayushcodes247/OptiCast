@@ -4,10 +4,15 @@ import fs from "fs/promises";
 import path from "path";
 import redisConnection from "../configs/redis.config";
 
+/**
+ * Worker responsible for:
+ * 1. Removing video documents from DB
+ * 2. Deleting associated delivery files
+ */
 new Worker(
   "delete-queue",
   async (job) => {
-    console.info("Processing Delete JOB:",job.id);
+    console.info("Processing Delete JOB:", job.id);
 
     const { mediaCollectionId, videoIds, deliveryPaths } = job.data;
 
@@ -15,10 +20,12 @@ new Worker(
       return;
     }
 
+    // Delete videos from database
     await Video.deleteMany({
       _id: { $in: videoIds },
     });
 
+    // Delete associated files from disk
     if (Array.isArray(deliveryPaths)) {
       for (const filePath of deliveryPaths) {
         try {

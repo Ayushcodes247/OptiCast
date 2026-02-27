@@ -1,3 +1,13 @@
+/**
+ * ---------------------------------------------------------
+ * MEDIA COLLECTION ACCESS TOKEN MIDDLEWARE
+ * ---------------------------------------------------------
+ * Verifies:
+ * - Bearer access token
+ * - Token matches hashed token in DB
+ * ---------------------------------------------------------
+ */
+
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "@utils/essentials.util";
 import { MediaCollectionModel } from "@models/mediacollection.model";
@@ -15,20 +25,21 @@ const isVerifiedMediaCollection = async (
   }
 
   const token = authHeader.replace("Bearer ", "").trim();
-  const collection = await MediaCollectionModel.findOne({
-    _id: id,
-  }).select("-v -createdAt -updatedAt");
+
+  const collection = await MediaCollectionModel.findById(id).select(
+    "-__v -createdAt -updatedAt",
+  );
+
   if (!collection) {
     return next(new AppError("Media collection not found.", 404));
   }
 
-  const isTrue = await collection.compareAccessToken(token);
-  if (!isTrue) {
+  const isValid = await collection.compareAccessToken(token);
+  if (!isValid) {
     return next(new AppError("Invalid access token.", 403));
   }
 
   req.mediacollection = collection;
-
   next();
 };
 

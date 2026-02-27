@@ -1,3 +1,17 @@
+/**
+ * ---------------------------------------------------------
+ * VIDEO CONTROLLER
+ * ---------------------------------------------------------
+ * Responsibilities:
+ * - Handle upload & queueing
+ * - Manage transcoding lifecycle events
+ * - Issue playback cookies
+ * - Stream redirection
+ * - Refresh playback token
+ * - Delete video + HLS cleanup
+ * ---------------------------------------------------------
+ */
+
 import { Request, Response, NextFunction } from "express";
 import { AppError, asyncHandler } from "@utils/essentials.util";
 import redisConnection from "@configs/redis.config";
@@ -9,16 +23,27 @@ import { MediaCollectionModel } from "@models/mediacollection.model";
 import { env } from "@configs/env.config";
 import { generateSignedCookie } from "@utils/signedCookie.util";
 import fs from "fs";
-import path from "path";
 
+/**
+ * ---------------------------------------------------------
+ * TRANSCODE QUEUE EVENT LISTENERS
+ * ---------------------------------------------------------
+ * Listens to BullMQ job lifecycle events
+ */
 const event = new QueueEvents("transcode-queue", {
   connection: redisConnection,
 });
 
+/**
+ * When job starts processing
+ */
 event.on("progress", async ({ jobId }) => {
   await Video.updateOne({ jobId }, { status: "processing" });
 });
 
+/**
+ * When job completes successfully
+ */
 event.on("completed", async ({ jobId, returnvalue }) => {
   if (
     typeof returnvalue !== "object" ||
@@ -41,6 +66,9 @@ event.on("completed", async ({ jobId, returnvalue }) => {
 
   if (!video) return;
 
+  /**
+   * Push HLS path to media collection
+   */
   await MediaCollectionModel.updateOne(
     { _id: video.mediaCollectionId },
     {
@@ -49,11 +77,17 @@ event.on("completed", async ({ jobId, returnvalue }) => {
   );
 });
 
+/**
+ * When job fails
+ */
 event.on("failed", async ({ jobId, failedReason }) => {
   await Video.updateOne({ jobId }, { status: "failed" });
   console.error("Transcoding failed:", failedReason);
 });
 
+/**
+ * Upload video → queue for transcoding
+ */
 export const uploadToBack = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
@@ -73,10 +107,16 @@ export const uploadToBack = asyncHandler(
       return next(new AppError("Unauthorized", 401));
     }
 
+    /**
+     * Ensure user owns collection
+     */
     if (collection?.userId.toString() !== req.user._id.toString()) {
       return next(new AppError("Forbidden", 403));
     }
 
+    /**
+     * Add job to transcode queue
+     */
     const videoId = randomUUID();
     const { videoname } = req.body;
 
@@ -98,11 +138,17 @@ export const uploadToBack = asyncHandler(
       );
     }
 
+    /**
+     * Create DB entry
+     */
     const video = await Video.create({
       ...value,
       deliveryPath: "",
     });
 
+    /**
+     * Attach video reference to collection
+     */
     collection.videosId.push(video._id);
     await collection.save();
 
@@ -115,6 +161,10 @@ export const uploadToBack = asyncHandler(
   },
 );
 
+/**
+ * Issue signed playback cookie
+ * Then redirect to stream route
+ */
 export const requestVideo = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id, videoId } = req.params;
@@ -138,6 +188,12 @@ export const requestVideo = asyncHandler(
   },
 );
 
+/**
+ * Stream endpoint
+ * - Validates playback cookie
+ * - Ensures token matches collection + video
+ * - Redirects to HLS delivery path
+ */
 export const stream = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id, videoId } = req.params;
@@ -166,10 +222,16 @@ export const stream = asyncHandler(
       return next(new AppError("Video not ready for streaming.", 404));
     }
 
+    /**
+     * Redirect to actual HLS path
+     */
     res.redirect(302, video.deliveryPath);
   },
 );
 
+/**
+ * Refresh playback cookie during long playback
+ */
 export const refresh = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
@@ -208,6 +270,12 @@ export const refresh = asyncHandler(
   },
 );
 
+/**
+ * Delete video:
+ * - Remove DB record
+ * - Remove reference from collection
+ * - Delete HLS folder
+ */
 export const deleteStream = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id, videoId } = req.params;
@@ -227,10 +295,18 @@ export const deleteStream = asyncHandler(
       mediaCollectionId: collection._id,
     });
 
-    console.log(video)
-
     if (!video) {
       return next(new AppError("Video not found.", 404));
+    }
+
+    /**
+     * Remove local HLS directory
+     */
+    if (video.deliveryPath) {
+      fs.rmSync(`./hls/${videoId}`, {
+        recursive: true,
+        force: true,
+      });
     }
 
     await Video.deleteOne({ _id: video._id });
@@ -240,13 +316,6 @@ export const deleteStream = asyncHandler(
     );
 
     await collection.save();
-
-    if (video.deliveryPath) {
-      fs.rmSync(`./hls/${videoId}`, {
-        recursive: true,
-        force: true,
-      });
-    }
 
     res.status(200).json({
       success: true,
