@@ -5,10 +5,15 @@ import Login from "./Components/Login";
 import UserDashBoard from "./Components/UserDashBoard";
 import UserSec from "./Components/UserSec";
 import Page404 from "./Components/Page404";
+import Home from "./Components/Home";
+import MediaCollection from "./Components/MediaCollection";
+import Stream from "./Components/Stream";
+import Account from "./Components/Account";
 
 const App = () => {
   return (
     <Routes>
+      <Route path="/" element={<Home/>}/>
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={
@@ -16,6 +21,15 @@ const App = () => {
           <UserDashBoard/>
         </UserSec>
       }/>
+      <Route path="/media/collection" element={<UserSec>
+        <MediaCollection/>
+      </UserSec>}/>
+      <Route path="/stream" element={<UserSec>
+        <Stream/>
+      </UserSec>}/>
+      <Route path="/account" element={<UserSec>
+        <Account/>
+      </UserSec>}/>
       <Route path="/404" element={<UserSec><Page404/></UserSec>}/>
     </Routes>
   );
